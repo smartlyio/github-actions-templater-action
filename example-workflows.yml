@@ -5,7 +5,8 @@
 arguments:
   a_parameter: 12.16.9
   # template_ref here will specify that you want to pull something other than master from the templates repo
-  # Not specifying a value here will mean that templates from the master branch are used
+  # Not specifying a value here will mean that templates from the defaults.yml file are used or, 
+  # if those don't esist either, master branch is used
   template_ref: dev
 
 # The workflows here will each be built into a separate file.
