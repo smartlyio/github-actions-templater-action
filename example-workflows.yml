@@ -1,0 +1,110 @@
+# Arguments are used to add values to the whole workflow.
+# They are intentionally separate and have to be refered to separately from the template arguments (template args).
+# Workflow level arguments are also specified in the defaults.yml file in the templater repo.
+# Any values here will overwrite any value with the same name in the defaults.yml.
+arguments:
+  a_parameter: 12.16.9
+  # template_ref here will specify that you want to pull something other than master from the templates repo
+  # Not specifying a value here will mean that templates from the master branch are used
+  template_ref: dev
+
+# The workflows here will each be built into a separate file.
+# The file name defaults to the name of the action but you can specify a different file name with a 'file' parameter.
+workflows:
+  # This is the most simple form of workflow. It has a name, trigger and a simple job.
+  - name: Check Labels
+    # Triggers are in the same format as github actions. You can specify multiple triggers.
+    triggers: 
+      pull_request:
+        branches: [master]
+        types: [labeled, unlabeled, synchronize]
+    # This is the simplest job structure. It has a name and a template (in this case with no variables)
+    # This will load the template in util/check_labels.j2 and render it in a workflow structure.
+    jobs:
+      - name: check_labels
+        template: util/check_labels
+
+  - name: Self Updater
+    # Here we can see that the file name is specified. Don't forget the '.yml' at the end, it won't be added.
+    file: gha_updater.yml
+    triggers:
+      schedule:
+        - cron:  '*/15 * * * *'
+    jobs:
+      - name: update_gha
+        template: util/update_gha
+        # Most job templates take some arguments that are templated in to change behavior.
+        template_args:
+          timeout_minutes: 5
+
+  - name: Publish
+    triggers:
+      pull_request:
+        branches: [master]
+        types: [closed]
+    # Multiple jobs can be specified in the same workflow.
+    # This is encouraged when multiple jobs should be run on the same trigger.
+    jobs:
+      - name: version_bump
+        template: js/publish
+        template_args:
+          # This specific template argument make sthe job only run on a merged event.
+          # The if_clause variable takes standard github actions syntax.
+          if_clause: github.event.pull_request.merged
+          with_cache: false
+      - name: deploy_storybook
+        template: js/deploy_storybook
+        template_args:
+          # The 'depends' does what the name suggests, this job will only run when the 'version_bump' job is done.
+          depends: version_bump
+          if_clause: github.event.pull_request.merged
+          with_cache: false
+          skip_build: true
+
+  - name: Build, Lint, Test
+    triggers: 
+      pull_request:
+        branches: [master]
+        types: [opened, synchronize]
+    jobs:
+      # Notice that the build, lint and test blocks all use the same template but with a different command.
+      # This particular template sets up a JS/TS environment and wither a yarn command or a custom step can be added as an argument.
+      - name: build
+        template: js/basic
+        template_args:
+          yarn_cmd: ci:build
+          with_cache: true
+      - name: lint
+        template: js/basic
+        template_args:
+          yarn_cmd: ci:lint
+          with_cache: true
+      - name: test
+        template: js/basic
+        template_args:
+          yarn_cmd: ci:test
+          with_cache: true
+      - name: Custom
+        # Custom jobs allow you to use the bbuilding blocks provided in templates as you see fit.
+        # Not specifying a type defaults to the templated import style job.
+        type: custom
+        # Custom jobs are built up of 'blocks'
+        blocks:
+          # The import type block imports and render a template.
+          - type: import
+            # Note that you have to specify that you are using a job tempalte here.
+            template: job/js/basic
+            template_args:
+              # tempalte_args work the same as they do in normal templated jobs
+              with_cache: true
+          - type: import
+            # step templates can also be used here.
+            template: step/setup_node
+          # 'raw' is the other type of block that can be specified in a custom job.
+          - type: raw
+            # The steps specified here will be rendered (same syntax as the normal templating) directly into the job.
+            steps:
+            - uses: actions/checkout@v2
+            - run:   echo ::set-env name=REPOSITORY_NAME::$(echo "$GITHUB_REPOSITORY" | awk -F / '{print $2}' | sed -e "s/:refs//")
+              shell: bash
+          
