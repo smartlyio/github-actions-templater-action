@@ -1,0 +1,5 @@
+name: 'Build GitHub Action Workflows'
+description: 'Builds workflows from templates in a specified repo'
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
