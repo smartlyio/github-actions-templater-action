@@ -18,4 +18,6 @@ RUN pip install -r /templater/requirements.txt
 COPY entrypoint.sh /templater/entrypoint.sh
 COPY templater.py /templater/templater.py
 
-ENTRYPOINT ["/templater/entrypoint.sh"]
+WORKDIR /github/workspace
+
+CMD [ "python", "/templater/templater.py" ]
