@@ -15,7 +15,6 @@ USER runner
 COPY requirements.txt /templater/requirements.txt
 RUN pip install -r /templater/requirements.txt
 
-COPY entrypoint.sh /templater/entrypoint.sh
 COPY templater.py /templater/templater.py
 
 WORKDIR /github/workspace
