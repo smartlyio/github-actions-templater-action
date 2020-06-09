@@ -55,7 +55,7 @@ def load_config(config_file):
     return config
 
 def build_trigger_block(triggers):
-    rendered_template = yaml.dump(triggers)
+    rendered_template = yaml.dump(triggers, default_flow_style=False)
     return rendered_template.strip("\n")
 
 
@@ -69,7 +69,7 @@ def build_custom_step_block(blocks, workflow_args, template_location, env):
                 print('Template ' + template_location + '/' + block['template'] + '.j2 not found!')
                 exit(1)
         elif block['type'] == 'raw':
-            steps_template = Template(yaml.dump(block['steps']) + '\n')
+            steps_template = Template(yaml.dump(block['steps'], default_flow_style=False) + '\n')
         else:
             print("Not a supported block type: " + block['type'])
             exit(1)
