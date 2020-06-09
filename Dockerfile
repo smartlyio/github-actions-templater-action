@@ -12,6 +12,7 @@ LABEL com.github.actions.icon="package"
 RUN adduser -S runner -u 1001
 USER runner
 
+WORKDIR /templater
 COPY requirements.txt /templater/requirements.txt
 RUN pip install -r /templater/requirements.txt
 
