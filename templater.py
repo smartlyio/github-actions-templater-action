@@ -144,10 +144,10 @@ def main(mode, template_location, defaults_file, workflow_spec_file, output_loca
     else:
         repo_args = {}
 
-    workflow_args = WorkflowArgs(load_config(defaults_file), repo_args)
-    workflows = workflow_config['workflows']
-
     if mode == 'RENDER':
+        workflow_args = WorkflowArgs(load_config(defaults_file), repo_args)
+        workflows = workflow_config['workflows']
+
         file_loader = FileSystemLoader(template_location)
         env = Environment(loader=file_loader,
                       trim_blocks=True,

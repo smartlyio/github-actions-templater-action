@@ -13,6 +13,11 @@ RUN pip install -r /templater/requirements.txt
 
 COPY templater.py /templater/templater.py
 
+# User user that has the same uid as Github's virtual runner. This causes the generated files to have assumed
+# permissions.
+RUN adduser -S runner -u 1001
+USER runner
+
 WORKDIR /github/workspace
 
 CMD [ "python", "/templater/templater.py" ]
