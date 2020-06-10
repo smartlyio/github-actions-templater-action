@@ -90,13 +90,13 @@ workflows:
         type: custom
         # Custom jobs are built up of 'blocks'
         blocks:
-          # The import type block imports and render a template.
-            # Note that you have to specify that you are using a job tempalte here.
+          # This block imports and renders a template.
+          # Note that you have to specify that you are using a job template here.
           - template: job/js/basic
             template_args:
               # tempalte_args work the same as they do in normal templated jobs
               with_cache: true
-            # step templates can also be used here.
+          # step templates can also be used here.
           - template: step/setup_node
           # 'raw' is the other type of block that can be specified in a custom job.
           - type: raw

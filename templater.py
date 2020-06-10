@@ -40,28 +40,30 @@ class WorkflowArgs(Mapping):
 
 
 def no_duplicates_constructor(loader, node, deep=False):
-  """Check for duplicate keys."""
-  mapping = {}
-  for key_node, value_node in node.value:
-    key = loader.construct_object(key_node, deep=deep)
-    if key in mapping:
-      msg = "Duplicate key {0} (overwrite existing value '{1}' with new value '{2}'"
-      msg = msg.format(key, mapping[key], value_node)
-      raise yaml.YAMLError(msg)
-    value = loader.construct_object(value_node, deep=deep)
-    mapping[key] = value
-  return loader.construct_mapping(node, deep)
+    """Check for duplicate keys."""
+    mapping = {}
+    for key_node, value_node in node.value:
+        key = loader.construct_object(key_node, deep=deep)
+        if key in mapping:
+            msg = "Duplicate key {0} (overwrite existing value '{1}' with new value '{2}'"
+            msg = msg.format(key, mapping[key], value_node)
+            raise yaml.YAMLError(msg)
+        value = loader.construct_object(value_node, deep=deep)
+        mapping[key] = value
+    return loader.construct_mapping(node, deep)
 
 
 def construct_mapping(loader, node):
-  loader.flatten_mapping(node)
-  return object_pairs_hook(loader.construct_pairs(node))
+    loader.flatten_mapping(node)
+    return object_pairs_hook(loader.construct_pairs(node))
 
 
 class DupCheckLoader(yaml.Loader):
-  """Local class to prevent pollution of global yaml.Loader."""
-  pass
+    """Local class to prevent pollution of global yaml.Loader."""
+    pass
 
+DupCheckLoader.add_constructor(yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
+                               no_duplicates_constructor)
 
 def load_config(config_file):
     """
@@ -69,8 +71,6 @@ def load_config(config_file):
     Returns processed config
     """
     config = []
-    DupCheckLoader.add_constructor(yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
-                                    no_duplicates_constructor)
 
     with open(config_file, 'r') as stream:
         try:
