@@ -39,39 +39,69 @@ class WorkflowArgs(Mapping):
         return len(self.__keys)
 
 
+def no_duplicates_constructor(loader, node, deep=False):
+    """Check for duplicate keys."""
+    mapping = {}
+    for key_node, value_node in node.value:
+        key = loader.construct_object(key_node, deep=deep)
+        if key in mapping:
+            msg = "Duplicate key {0} (overwrite existing value '{1}' with new value '{2}'"
+            msg = msg.format(key, mapping[key], value_node)
+            raise yaml.YAMLError(msg)
+        value = loader.construct_object(value_node, deep=deep)
+        mapping[key] = value
+    return loader.construct_mapping(node, deep)
+
+
+def construct_mapping(loader, node):
+    loader.flatten_mapping(node)
+    return object_pairs_hook(loader.construct_pairs(node))
+
+
+class DupCheckLoader(yaml.Loader):
+    """Local class to prevent pollution of global yaml.Loader."""
+    pass
+
+DupCheckLoader.add_constructor(yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
+                               no_duplicates_constructor)
+
 def load_config(config_file):
     """
     Loads the yaml config file specified in 'config_file' and process it as yaml.
     Returns processed config
     """
     config = []
+
     with open(config_file, 'r') as stream:
         try:
-            config = yaml.load(stream, Loader=yaml.SafeLoader)
+            config = yaml.load(stream, Loader=DupCheckLoader)
         except yaml.YAMLError as exc:
             print("Problem processing config!")
             print(exc)
             exit(1)
     return config
 
-def build_trigger_block(triggers):
-    rendered_template = yaml.dump(triggers)
-    return rendered_template.strip("\n")
+
+def build_trigger_block(triggers, template_location, env):
+    rendered_triggers = ''
+    for trigger in triggers:
+        if trigger == 'template':
+            trigger_template = env.get_template('trigger/' + triggers[trigger] + '.j2')
+            rendered_triggers += trigger_template.render(trigger=trigger)
+        else:
+            rendered_triggers += yaml.dump({trigger : triggers[trigger]}, default_flow_style=False)
+    return rendered_triggers.strip("\n")
 
 
 def build_custom_step_block(blocks, workflow_args, template_location, env):
     rendered_steps = ''
     for block in blocks:
-        if block['type'] == 'import':
-            if path.exists(template_location + '/' + block['template'] + '.j2'):
-                steps_template = env.get_template('/' + block['template'] + '.j2')
-            else:
-                print('Template ' + template_location + '/' + block['template'] + '.j2 not found!')
-                exit(1)
+        if 'template' in block.keys():
+            steps_template = env.get_template(block['template'] + '.j2')
         elif block['type'] == 'raw':
-            steps_template = Template(yaml.dump(block['steps']) + '\n')
+            steps_template = Template(yaml.dump(block['steps'], default_flow_style=False) + '\n')
         else:
-            print("Not a supported block type: " + block['type'])
+            print("Not a supported block type: " + str(block))
             exit(1)
         rendered_steps += steps_template.render(job=block, args=workflow_args)
 
@@ -85,19 +115,25 @@ def build_job_block(jobs, workflow_args, template_location, env):
             job['template_args'] = []
         if 'type' in job.keys() and job['type'] == 'custom':
             rendered_steps = build_custom_step_block(job['blocks'], workflow_args, template_location, env)
-        else:
-            steps_template = env.get_template('/job/' + job['template'] + '.j2')
+        elif 'template' in job.keys():
+            steps_template = env.get_template('job/' + job['template'] + '.j2')
             rendered_steps = steps_template.render(job=job, args=workflow_args)
-        job_template = env.get_template('/job/base.j2')
+        else:
+            print("Unknown job type: " + str(job))
+            exit(1)
+        job_template = env.get_template('job/base.j2')
         rendered_template += job_template.render(job=job,rendered_steps=rendered_steps, args=workflow_args)
     return rendered_template.strip("\n")
 
 
-def write_workflow(workflow, trigger_block, job_block, output_location, env):
-    base_template = env.get_template('base.j2')
+def write_workflow(workflow, output_location, env, trigger_block=None, job_block=None):
 
-    workflow['triggers'] = trigger_block
-    workflow['jobs'] = job_block
+    if 'template' in workflow.keys():
+        base_template = env.get_template(workflow['template'])
+    else:
+        base_template = env.get_template('workflow/base.j2')
+        workflow['triggers'] = trigger_block
+        workflow['jobs'] = job_block
 
     output = base_template.render(workflow=workflow)
 
@@ -156,9 +192,13 @@ def main(mode, template_location, defaults_file, workflow_spec_file, output_loca
                       variable_end_string='*}')
 
         for workflow in workflows:
-            trigger_block = build_trigger_block(workflow['triggers'])
-            job_block = build_job_block(workflow['jobs'], workflow_args, template_location, env)
-            write_workflow(workflow, trigger_block, job_block, output_location, env)
+            if 'template' not in workflow.keys():
+                trigger_block = build_trigger_block(workflow['triggers'], template_location, env)
+                job_block = build_job_block(workflow['jobs'], workflow_args, template_location, env)
+                write_workflow(workflow, output_location, env, 
+                               trigger_block=trigger_block, job_block=job_block)
+            else:
+                write_workflow(workflow, output_location, env)
 
     elif mode == 'GET_REF':
         output_template_ref(repo_args)
