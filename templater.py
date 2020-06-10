@@ -109,7 +109,7 @@ def build_custom_step_block(blocks, workflow_args, template_location, env):
 
 
 def build_job_block(jobs, workflow_args, template_location, env):
-    rendered_template = ''
+    rendered_jobs = []
     for job in jobs:
         if 'template_args' not in job.keys():
             job['template_args'] = []
@@ -122,20 +122,20 @@ def build_job_block(jobs, workflow_args, template_location, env):
             print("Unknown job type: " + str(job))
             exit(1)
         job_template = env.get_template('job/base.j2')
-        rendered_template += job_template.render(job=job,rendered_steps=rendered_steps, args=workflow_args)
-    return rendered_template.strip("\n")
+        rendered_jobs.append(job_template.render(job=job, rendered_steps=rendered_steps, args=workflow_args))
+    return rendered_jobs
 
 
-def write_workflow(workflow, output_location, env, trigger_block=None, job_block=None):
+def write_workflow(workflow, output_location, env, trigger_block=None, job_blocks=None, workflow_args=None):
 
     if 'template' in workflow.keys():
-        base_template = env.get_template(workflow['template'])
+        base_template = env.get_template('workflow/' + workflow['template'] + '.j2')
     else:
         base_template = env.get_template('workflow/base.j2')
         workflow['triggers'] = trigger_block
-        workflow['jobs'] = job_block
+        workflow['jobs'] = job_blocks
 
-    output = base_template.render(workflow=workflow)
+    output = base_template.render(workflow=workflow, args=workflow_args)
 
     if 'file' in workflow.keys():
         out_file_name = workflow['file']
@@ -194,11 +194,11 @@ def main(mode, template_location, defaults_file, workflow_spec_file, output_loca
         for workflow in workflows:
             if 'template' not in workflow.keys():
                 trigger_block = build_trigger_block(workflow['triggers'], template_location, env)
-                job_block = build_job_block(workflow['jobs'], workflow_args, template_location, env)
+                job_blocks = build_job_block(workflow['jobs'], workflow_args, template_location, env)
                 write_workflow(workflow, output_location, env, 
-                               trigger_block=trigger_block, job_block=job_block)
+                               trigger_block=trigger_block, job_blocks=job_blocks)
             else:
-                write_workflow(workflow, output_location, env)
+                write_workflow(workflow, output_location, env, workflow_args=workflow_args)
 
     elif mode == 'GET_REF':
         output_template_ref(repo_args)
