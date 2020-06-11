@@ -139,9 +139,15 @@ def write_workflow(workflow, output_location, env, trigger_block=None, job_block
 
     if 'file' in workflow.keys():
         out_file_name = workflow['file']
-    else:
+    elif 'name' in workflow.keys():
         out_file_name = workflow['name'].replace(' ','_').lower()
         out_file_name = re.sub(r'\W+', '', out_file_name) + '.yml'
+    elif 'template' in workflow.keys():
+        template_split = re.split('[^a-zA-Z]', workflow['template'])
+        out_file_name = template_split[-1] + '.yml'
+    else:
+        print("No way to determine a name for this workflow: " + str(workflow))
+
     
     print('Writing ' + out_file_name)
     with open(output_location + out_file_name, 'w+') as f:
