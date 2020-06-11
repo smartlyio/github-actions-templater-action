@@ -32,10 +32,12 @@ workflows:
         - cron:  '*/15 * * * *'
     jobs:
       - name: update_gha
-        template: util/update_gha
         # Most job templates take some arguments that are templated in to change behavior.
-        template_args:
-          timeout_minutes: 5
+        # Job variables are listed immediately under jobs (like this one) and variables that apply to 
+        # the listed template are listed under template_args
+        timeout_minutes: 5
+        template: util/update_gha
+        
 
   - name: Publish
     triggers:
@@ -46,19 +48,19 @@ workflows:
     # This is encouraged when multiple jobs should be run on the same trigger.
     jobs:
       - name: version_bump
+        # This specific template argument make sthe job only run on a merged event.
+        # The if_clause variable takes standard github actions syntax.
+        if_clause: github.event.pull_request.merged
         template: js/publish
         template_args:
-          # This specific template argument make sthe job only run on a merged event.
-          # The if_clause variable takes standard github actions syntax.
-          if_clause: github.event.pull_request.merged
-          with_cache: false
+          skip_cache: true
       - name: deploy_storybook
         template: js/deploy_storybook
         template_args:
           # The 'depends' does what the name suggests, this job will only run when the 'version_bump' job is done.
           depends: version_bump
           if_clause: github.event.pull_request.merged
-          with_cache: false
+          skip_cache: true
           skip_build: true
 
   - name: Build, Lint, Test
@@ -73,19 +75,16 @@ workflows:
         template: js/basic
         template_args:
           yarn_cmd: ci:build
-          with_cache: true
       - name: lint
         template: js/basic
         template_args:
           yarn_cmd: ci:lint
-          with_cache: true
       - name: test
         template: js/basic
         template_args:
           yarn_cmd: ci:test
-          with_cache: true
       - name: Custom
-        # Custom jobs allow you to use the bbuilding blocks provided in templates as you see fit.
+        # Custom jobs allow you to use the building blocks provided in templates as you see fit.
         # Not specifying a type defaults to the templated import style job.
         type: custom
         # Custom jobs are built up of 'blocks'
@@ -94,8 +93,8 @@ workflows:
           # Note that you have to specify that you are using a job template here.
           - template: job/js/basic
             template_args:
-              # tempalte_args work the same as they do in normal templated jobs
-              with_cache: true
+              # template_args work the same as they do in normal templated jobs
+              skip_cache: true
           # step templates can also be used here.
           - template: step/setup_node
           # 'raw' is the other type of block that can be specified in a custom job.
