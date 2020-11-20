@@ -35,14 +35,12 @@ runs:
       shell: bash
       run: |
         @import script-import-helper (script_name: "run-templater.bash")
-
     - name: Remove github-actions-templates checkout
       shell: bash
       # Remove templates dir so we don't leave the working tree dirty for
       # commit in next step
       run: |
         rm -rf REMOVE-ME-github-actions-templates
-
     - name: Push changes if required
       env:
         GITHUB_TOKEN: ${{ inputs.github-token }}
