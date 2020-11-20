@@ -72,12 +72,12 @@ runs:
               git push --force-with-lease -u origin HEAD
             fi
 
-            function pr_exists() {	
-                local repo="$1"	
-                local branch="$2"	
-                local PR_COUNT=	
-                PR_COUNT="$(gh api "repos/${repo}/pulls?state=open&head=smartlyio:${branch}" | jq '. | length')"	
-                [ "$PR_COUNT" -gt 0 ]	
+            function pr_exists() {
+                local repo="$1"
+                local branch="$2"
+                local PR_COUNT=
+                PR_COUNT="$(gh api "repos/${repo}/pulls?state=open&head=smartlyio:${branch}" | jq '. | length')"
+                [ "$PR_COUNT" -gt 0 ]
             }
 
             echo "Check if the PR already exists"
