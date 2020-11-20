@@ -4,6 +4,7 @@ git_changes="$(git status --porcelain -- .github/workflows || true)"
 # If the output is not empty, there are changes. Commit them
 if [ -n "$git_changes" ]; then
     echo "Changes to workflows found!"
+    REPOSITORY_NAME="$(echo "$GITHUB_REPOSITORY" | awk -F / '{print $2}' | sed -e "s/:refs//")"
     BRANCH_NAME="${REPOSITORY_NAME}-github-actions-self-update"
     echo "Using branch: $BRANCH_NAME"
     git checkout -b "$BRANCH_NAME"
