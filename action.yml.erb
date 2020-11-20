@@ -1,0 +1,52 @@
+name: 'Build GitHub Action Workflows'
+description: >-
+  Builds workflows from templates in a specified repo. This requires
+  the templates cloned before running. It will also delete the
+  templates clone after use.
+
+  Expects REPOSITORY_NAME to be in the environment, containing the
+  repository name without the organization name.
+
+inputs:
+  github-token:
+    description: Token used to create the PR
+    required: true
+  templates-location:
+    description: >-
+      Relative path to the directory where the templates repository
+      was cloned.  This directory will be deleted after use; do not
+      use it after this action has run.
+    required: true
+  templater-image-name:
+    description: >-
+      Name of the docker image to run for the templater action.  It is
+      expected that you are logged in to the registry required to pull
+      this image.
+    required: true
+  extra-pr-label:
+    description: Label created PRs with this additional label
+    required: false
+    default: ""
+
+runs:
+  using: "composite"
+  steps:
+    - name: Run templater
+      shell: bash
+      run: |
+        @import script-import-helper (script_name: "run-templater.bash")
+
+    - name: Remove github-actions-templates checkout
+      shell: bash
+      # Remove templates dir so we don't leave the working tree dirty for
+      # commit in next step
+      run: |
+        rm -rf REMOVE-ME-github-actions-templates
+
+    - name: Push changes if required
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        PR_LABEL: ${{ inputs.extra-pr-label }}
+      shell: bash
+      run: |
+        @import script-import-helper (script_name: "push-changes.bash")
