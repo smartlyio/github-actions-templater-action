@@ -15,7 +15,9 @@ inputs:
     required: true
   templater-image-name:
     description: >-
-      Name of the docker container to run for the templater action
+      Name of the docker image to run for the templater action.  It is
+      expected that you are logged in to the registry required to pull
+      this image.
     required: true
   extra-pr-label:
     description: Label created PRs with this additional label
@@ -26,6 +28,7 @@ runs:
   using: "composite"
   steps:
     - name: Run templater
+      shell: bash
       run: |
         docker pull ${{ inputs.templater-image-name }}
         docker run --hostname "workflow-update-${REPOSITORY_NAME}" --rm \
@@ -35,9 +38,9 @@ runs:
             render workflows --no-update
 
     - name: Remove github-actions-templates checkout
+      shell: bash
       # Remove templates dir so we don't leave the working tree dirty for
       # commit in next step
-      if: ${{ always() }}
       run: |
         rm -rf REMOVE-ME-github-actions-templates
 
@@ -45,6 +48,7 @@ runs:
       env:
         GITHUB_TOKEN: ${{ inputs.github-token }}
         PR_LABEL: ${{ inputs.extra-pr-label }}
+      shell: bash
       run: |
         git status
         # Check for changes in .github/workflows
