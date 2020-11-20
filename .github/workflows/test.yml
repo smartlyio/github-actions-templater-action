@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Run shellcheck on .sh files
+      - name: Run shellcheck on .sh and .bash files files
         run: |
           find . -name '*.sh' -exec shellcheck -s bash '{}' \+
           find . -name '*.bash' -exec shellcheck -s bash '{}' \+
