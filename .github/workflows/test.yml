@@ -1,0 +1,38 @@
+name: Lint and validate
+
+on:
+  pull_request:
+    branches: [master]
+  push:
+    branches: [build-action-from-templates]
+
+jobs:
+  shellcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Run shellcheck on .sh files
+        run:
+          find . -name '*.sh' -exec shellcheck '{}' \+
+          find . -name '*.bash' -exec shellcheck '{}' \+
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-ruby@v1
+        with:
+          ruby-version: "2.7"
+      - name: Install kojo
+        run: |
+          gem install kojo
+      - run: make
+      - name: Check for changes
+        run: |
+          git status
+          git_changes="$(git status --porcelain || true)"
+          # If the output is not empty, there are changes; fail the action
+          if [ -n "$git_changes" ]; then
+              echo "Changes found; build the action with 'make' and commit the changes"
+              exit 1
+          fi
