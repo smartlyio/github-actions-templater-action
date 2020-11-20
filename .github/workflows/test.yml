@@ -8,7 +8,8 @@ on:
 
 jobs:
   shellcheck:
-    runs-on: ubuntu-latest
+    # Use newer os for more up-to-date shellcheck
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
       - name: Run shellcheck on .sh and .bash files files
