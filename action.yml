@@ -30,12 +30,15 @@ runs:
   steps:
     - name: Run templater
       shell: bash
+      env:
+        DOCKER_IMAGE_NAME: ${{ inputs.templater-image-name }}
+        TEMPLATES_LOCATION: ${{ inputs.templates-location }}
       run: |
-        docker pull "${{ inputs.templater-image-name }}"
+        docker pull "$DOCKER_IMAGE_NAME"
         docker run --hostname "workflow-update-${REPOSITORY_NAME}" --rm \
             --mount type=bind,src="$(pwd),dst=/devbox/workspace" \
-            --mount type=bind,src="$(pwd)/${{ inputs.templates-location }},dst=/devbox/github-actions-templates" \
-            "${{ inputs.templater-image-name }}" \
+            --mount type=bind,src="$(pwd)/${TEMPLATES_LOCATION},dst=/devbox/github-actions-templates" \
+            "$DOCKER_IMAGE_NAME" \
                 render workflows --no-update
 
     - name: Remove github-actions-templates checkout

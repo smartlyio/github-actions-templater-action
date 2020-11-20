@@ -30,6 +30,9 @@ runs:
   steps:
     - name: Run templater
       shell: bash
+      env:
+        DOCKER_IMAGE_NAME: ${{ inputs.templater-image-name }}
+        TEMPLATES_LOCATION: ${{ inputs.templates-location }}
       run: |
         @import script-import-helper (script_name: "run-templater.bash")
     - name: Remove github-actions-templates checkout
