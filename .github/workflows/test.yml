@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Run shellcheck on .sh files
-        run:
+        run: |
           find . -name '*.sh' -exec shellcheck '{}' \+
           find . -name '*.bash' -exec shellcheck '{}' \+
 
@@ -24,8 +24,7 @@ jobs:
         with:
           ruby-version: "2.7"
       - name: Install kojo
-        run: |
-          gem install kojo
+        run: gem install kojo
       - run: make
       - name: Check for changes
         run: |
