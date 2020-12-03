@@ -28,6 +28,12 @@ inputs:
 runs:
   using: "composite"
   steps:
+    - name: Fix default branch discovery for devbox
+      shell: bash
+      run: |
+        DEFAULT_BRANCH="$(gh api "/repos/${GITHUB_REPOSITORY}" | jq .default_branch)"
+        echo "ref: refs/remote/origin/${DEFAULT_BRANCH}" > .git/refs/remotes/origin/HEAD
+
     - name: Run templater
       shell: bash
       run: |

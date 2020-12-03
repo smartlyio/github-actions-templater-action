@@ -28,6 +28,10 @@ inputs:
 runs:
   using: "composite"
   steps:
+    - name: Fix default branch discovery for devbox
+      shell: bash
+      run: |
+        @import script-import-helper (script_name: "fix-branch-discovery.bash")
     - name: Run templater
       shell: bash
       run: |
