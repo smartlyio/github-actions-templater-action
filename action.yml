@@ -29,6 +29,8 @@ runs:
   using: "composite"
   steps:
     - name: Fix default branch discovery for devbox
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
       shell: bash
       run: |
         DEFAULT_BRANCH="$(gh api "/repos/${GITHUB_REPOSITORY}" | jq .default_branch)"
