@@ -3,7 +3,16 @@ git status
 git_changes="$(git status --porcelain -- .github/workflows || true)"
 # If the output is not empty, there are changes. Commit them
 if [ -n "$git_changes" ]; then
+    echo ::set-output name=has-changes::true
     echo "Changes to workflows found!"
+
+    if [[ "$CREATE_PULL_REQUEST" == "false" ]]; then
+        echo "Skipping pull request creation"
+        exit 0
+    fi
+
+    # FIXME: Remove this exit. It's for safety while testing with templates repo branch
+    exit 1
     REPOSITORY_NAME="$(echo "$GITHUB_REPOSITORY" | awk -F / '{print $2}' | sed -e "s/:refs//")"
     BRANCH_NAME="${REPOSITORY_NAME}-github-actions-self-update"
     echo "Using branch: $BRANCH_NAME"
@@ -57,6 +66,7 @@ if [ -n "$git_changes" ]; then
       exit 0
     fi
 else
+    echo ::set-output name=has-changes::false
     echo "No Changes Found."
     exit 0
 fi
