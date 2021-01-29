@@ -34,6 +34,12 @@ inputs:
       Default is the repository running the workflow
     default: ${{ github.repository }}
     required: false
+  local-render:
+    description: >-
+      Use the templates checkout directly without switching to the branch
+      requested by the project (usually master). Default false.
+    default: "false"
+    required: false
 
 outputs:
   has-changes:
