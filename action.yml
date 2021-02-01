@@ -40,12 +40,6 @@ inputs:
       requested by the project (usually master). Default false.
     default: "false"
     required: false
-  working-directory:
-    description: >-
-      Working directory for all scripts in this action.
-      "templates-location" input is relative to this directory.
-    default: "."
-    required: false
 
 outputs:
   has-changes:
@@ -60,7 +54,6 @@ runs:
         GITHUB_TOKEN: ${{ inputs.github-token }}
         INPUT_GITHUB_REPOSITORY: ${{ inputs.github-repository }}
       shell: bash
-      working-directory: ${{ inputs.working-directory }}
       run: |
         DEFAULT_BRANCH="$(gh api "/repos/${INPUT_GITHUB_REPOSITORY}" | jq -r .default_branch)"
         echo "ref: refs/remotes/origin/${DEFAULT_BRANCH}" > .git/refs/remotes/origin/HEAD
@@ -69,7 +62,6 @@ runs:
       shell: bash
       env:
         INPUT_GITHUB_REPOSITORY: ${{ inputs.github-repository }}
-      working-directory: ${{ inputs.working-directory }}
       run: |
         REPOSITORY_NAME="$(echo "$INPUT_GITHUB_REPOSITORY" | awk -F / '{print $2}' | sed -e "s/:refs//")"
         render_arg="--no-update"
@@ -88,7 +80,6 @@ runs:
       shell: bash
       # Remove templates dir so we don't leave the working tree dirty for
       # commit in next step
-      working-directory: ${{ inputs.working-directory }}
       run: |
         rm -rf REMOVE-ME-github-actions-templates
     - name: Push changes if required
@@ -99,7 +90,6 @@ runs:
         PR_LABEL: ${{ inputs.extra-pr-label }}
         CREATE_PULL_REQUEST: ${{ inputs.create-pull-request }}
       shell: bash
-      working-directory: ${{ inputs.working-directory }}
       run: |
         git status
         # Check for changes in .github/workflows

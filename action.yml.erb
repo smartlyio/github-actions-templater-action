@@ -40,12 +40,6 @@ inputs:
       requested by the project (usually master). Default false.
     default: "false"
     required: false
-  working-directory:
-    description: >-
-      Working directory for all scripts in this action.
-      "templates-location" input is relative to this directory.
-    default: "."
-    required: false
 
 outputs:
   has-changes:
@@ -60,21 +54,18 @@ runs:
         GITHUB_TOKEN: ${{ inputs.github-token }}
         INPUT_GITHUB_REPOSITORY: ${{ inputs.github-repository }}
       shell: bash
-      working-directory: ${{ inputs.working-directory }}
       run: |
         @import script-import-helper (script_name: "fix-branch-discovery.bash")
     - name: Run templater
       shell: bash
       env:
         INPUT_GITHUB_REPOSITORY: ${{ inputs.github-repository }}
-      working-directory: ${{ inputs.working-directory }}
       run: |
         @import script-import-helper (script_name: "run-templater.bash")
     - name: Remove github-actions-templates checkout
       shell: bash
       # Remove templates dir so we don't leave the working tree dirty for
       # commit in next step
-      working-directory: ${{ inputs.working-directory }}
       run: |
         rm -rf REMOVE-ME-github-actions-templates
     - name: Push changes if required
@@ -85,6 +76,5 @@ runs:
         PR_LABEL: ${{ inputs.extra-pr-label }}
         CREATE_PULL_REQUEST: ${{ inputs.create-pull-request }}
       shell: bash
-      working-directory: ${{ inputs.working-directory }}
       run: |
         @import script-import-helper (script_name: "push-changes.bash")
