@@ -11,8 +11,6 @@ if [ -n "$git_changes" ]; then
         exit 0
     fi
 
-    # FIXME: Remove this exit. It's for safety while testing with templates repo branch
-    exit 1
     REPOSITORY_NAME="$(echo "$INPUT_GITHUB_REPOSITORY" | awk -F / '{print $2}' | sed -e "s/:refs//")"
     BRANCH_NAME="${REPOSITORY_NAME}-github-actions-self-update"
     echo "Using branch: $BRANCH_NAME"
