@@ -24,6 +24,27 @@ inputs:
     description: Label created PRs with this additional label
     required: false
     default: ""
+  create-pull-request:
+    description: Create a pull request after rendering templates
+    default: true
+    required: false
+  github-repository:
+    description: >-
+      Full name of the repository that is being rendered. e.g. smartlyio/ci-sla.
+      Default is the repository running the workflow
+    default: ${{ github.repository }}
+    required: false
+  local-render:
+    description: >-
+      Use the templates checkout directly without switching to the branch
+      requested by the project (usually master). Default false.
+    default: "false"
+    required: false
+
+outputs:
+  has-changes:
+    description: Boolean. True if changes were made to the rendered workflows.
+    value: ${{ steps.collect-changes.outputs.has-changes }}
 
 runs:
   using: "composite"
@@ -31,21 +52,29 @@ runs:
     - name: Fix default branch discovery for devbox
       env:
         GITHUB_TOKEN: ${{ inputs.github-token }}
+        INPUT_GITHUB_REPOSITORY: ${{ inputs.github-repository }}
       shell: bash
       run: |
-        DEFAULT_BRANCH="$(gh api "/repos/${GITHUB_REPOSITORY}" | jq -r .default_branch)"
+        DEFAULT_BRANCH="$(gh api "/repos/${INPUT_GITHUB_REPOSITORY}" | jq -r .default_branch)"
         echo "ref: refs/remotes/origin/${DEFAULT_BRANCH}" > .git/refs/remotes/origin/HEAD
 
     - name: Run templater
       shell: bash
+      env:
+        INPUT_GITHUB_REPOSITORY: ${{ inputs.github-repository }}
       run: |
-        REPOSITORY_NAME="$(echo "$GITHUB_REPOSITORY" | awk -F / '{print $2}' | sed -e "s/:refs//")"
+        REPOSITORY_NAME="$(echo "$INPUT_GITHUB_REPOSITORY" | awk -F / '{print $2}' | sed -e "s/:refs//")"
+        render_arg="--no-update"
+        local_render="${{ inputs.local-render }}"
+        if [[ "${local_render}" == "true" ]]; then
+            render_arg="--local"
+        fi
         docker pull "${{ inputs.templater-image-name }}"
         docker run --hostname "workflow-update-${REPOSITORY_NAME}" --rm \
             --mount type=bind,src="$(pwd),dst=/devbox/workspace" \
             --mount type=bind,src="$(pwd)/${{ inputs.templates-location }},dst=/devbox/github-actions-templates" \
             "${{ inputs.templater-image-name }}" \
-                render workflows --no-update
+                render workflows "$render_arg"
 
     - name: Remove github-actions-templates checkout
       shell: bash
@@ -54,9 +83,12 @@ runs:
       run: |
         rm -rf REMOVE-ME-github-actions-templates
     - name: Push changes if required
+      id: collect-changes
       env:
+        INPUT_GITHUB_REPOSITORY: ${{ inputs.github-repository }}
         GITHUB_TOKEN: ${{ inputs.github-token }}
         PR_LABEL: ${{ inputs.extra-pr-label }}
+        CREATE_PULL_REQUEST: ${{ inputs.create-pull-request }}
       shell: bash
       run: |
         git status
@@ -64,8 +96,15 @@ runs:
         git_changes="$(git status --porcelain -- .github/workflows || true)"
         # If the output is not empty, there are changes. Commit them
         if [ -n "$git_changes" ]; then
+            echo ::set-output name=has-changes::true
             echo "Changes to workflows found!"
-            REPOSITORY_NAME="$(echo "$GITHUB_REPOSITORY" | awk -F / '{print $2}' | sed -e "s/:refs//")"
+        
+            if [[ "$CREATE_PULL_REQUEST" == "false" ]]; then
+                echo "Skipping pull request creation"
+                exit 0
+            fi
+        
+            REPOSITORY_NAME="$(echo "$INPUT_GITHUB_REPOSITORY" | awk -F / '{print $2}' | sed -e "s/:refs//")"
             BRANCH_NAME="${REPOSITORY_NAME}-github-actions-self-update"
             echo "Using branch: $BRANCH_NAME"
             git checkout -b "$BRANCH_NAME"
@@ -91,7 +130,7 @@ runs:
             }
         
             echo "Check if the PR already exists"
-            if pr_exists "$GITHUB_REPOSITORY" "$BRANCH_NAME"; then
+            if pr_exists "$INPUT_GITHUB_REPOSITORY" "$BRANCH_NAME"; then
               echo "PR Exists already!"
               exit 0
             else
@@ -118,6 +157,7 @@ runs:
               exit 0
             fi
         else
+            echo ::set-output name=has-changes::false
             echo "No Changes Found."
             exit 0
         fi

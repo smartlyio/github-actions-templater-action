@@ -3,8 +3,15 @@ git status
 git_changes="$(git status --porcelain -- .github/workflows || true)"
 # If the output is not empty, there are changes. Commit them
 if [ -n "$git_changes" ]; then
+    echo ::set-output name=has-changes::true
     echo "Changes to workflows found!"
-    REPOSITORY_NAME="$(echo "$GITHUB_REPOSITORY" | awk -F / '{print $2}' | sed -e "s/:refs//")"
+
+    if [[ "$CREATE_PULL_REQUEST" == "false" ]]; then
+        echo "Skipping pull request creation"
+        exit 0
+    fi
+
+    REPOSITORY_NAME="$(echo "$INPUT_GITHUB_REPOSITORY" | awk -F / '{print $2}' | sed -e "s/:refs//")"
     BRANCH_NAME="${REPOSITORY_NAME}-github-actions-self-update"
     echo "Using branch: $BRANCH_NAME"
     git checkout -b "$BRANCH_NAME"
@@ -30,7 +37,7 @@ if [ -n "$git_changes" ]; then
     }
 
     echo "Check if the PR already exists"
-    if pr_exists "$GITHUB_REPOSITORY" "$BRANCH_NAME"; then
+    if pr_exists "$INPUT_GITHUB_REPOSITORY" "$BRANCH_NAME"; then
       echo "PR Exists already!"
       exit 0
     else
@@ -57,6 +64,7 @@ if [ -n "$git_changes" ]; then
       exit 0
     fi
 else
+    echo ::set-output name=has-changes::false
     echo "No Changes Found."
     exit 0
 fi
