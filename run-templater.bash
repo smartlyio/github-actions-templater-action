@@ -1,4 +1,4 @@
-REPOSITORY_NAME="$(echo "$GITHUB_REPOSITORY" | awk -F / '{print $2}' | sed -e "s/:refs//")"
+REPOSITORY_NAME="$(echo "$INPUT_GITHUB_REPOSITORY" | awk -F / '{print $2}' | sed -e "s/:refs//")"
 render_arg="--no-update"
 local_render="${{ inputs.local-render }}"
 if [[ "${local_render}" == "true" ]]; then

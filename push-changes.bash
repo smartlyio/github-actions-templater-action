@@ -13,7 +13,7 @@ if [ -n "$git_changes" ]; then
 
     # FIXME: Remove this exit. It's for safety while testing with templates repo branch
     exit 1
-    REPOSITORY_NAME="$(echo "$GITHUB_REPOSITORY" | awk -F / '{print $2}' | sed -e "s/:refs//")"
+    REPOSITORY_NAME="$(echo "$INPUT_GITHUB_REPOSITORY" | awk -F / '{print $2}' | sed -e "s/:refs//")"
     BRANCH_NAME="${REPOSITORY_NAME}-github-actions-self-update"
     echo "Using branch: $BRANCH_NAME"
     git checkout -b "$BRANCH_NAME"
@@ -39,7 +39,7 @@ if [ -n "$git_changes" ]; then
     }
 
     echo "Check if the PR already exists"
-    if pr_exists "$GITHUB_REPOSITORY" "$BRANCH_NAME"; then
+    if pr_exists "$INPUT_GITHUB_REPOSITORY" "$BRANCH_NAME"; then
       echo "PR Exists already!"
       exit 0
     else
