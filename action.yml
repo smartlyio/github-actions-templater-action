@@ -98,7 +98,7 @@ runs:
         
         for workflow in "${WORKFLOWS[@]}"; do
             echo "Disabling $workflow"
-            yq e -i '.on = []' "$workflow"
+            yq e -i '.on = {"pull_request": {"types": ["locked"], "branches": ["workflow-renovate-canary-branch-should-never-exist"]}}' "$workflow"
         done
 
     - name: Push changes if required
