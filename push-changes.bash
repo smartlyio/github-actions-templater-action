@@ -20,9 +20,11 @@ if [ -n "$git_changes" ]; then
     git add .github/workflows/
     git commit -m "Adding workflow changes at $(date)"
 
+    has_changes=true
     echo "Check if there is an existing branch and if the change set already exists in it."
     if [ -z "$(git diff "origin/$BRANCH_NAME" || echo "no branch")" ]; then
       echo "Seems to have no differences from existing branch!"
+      has_changes=false
     else
       echo "Pushing the branch"
       git push --force-with-lease -u origin HEAD
@@ -38,8 +40,13 @@ if [ -n "$git_changes" ]; then
 
     echo "Check if the PR already exists"
     if pr_exists "$INPUT_GITHUB_REPOSITORY" "$BRANCH_NAME"; then
-      echo "PR Exists already!"
-      exit 0
+      if [[ "$has_changes" == "true" ]]; then
+        echo "PR Exists already!"
+        exit 0
+      else
+        echo "Close the PR as there are no longer relevant changes"
+        gh pr close "$BRANCH_NAME"
+      fi
     else
       echo "Make sure the labels exist"
       if [ -n "$PR_LABEL" ]; then
