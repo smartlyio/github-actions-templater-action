@@ -1,4 +1,7 @@
-[ -z "$INPUT_DISABLE_WORKFLOWS_PREFIX" ] || exit 0
+if [ -z "$INPUT_DISABLE_WORKFLOWS_PREFIX" ]; then
+    echo "No workflows configured for disabling"
+    exit 0
+fi
 
 mapfile -t WORKFLOWS < <(find .github/workflows -type f -name "${INPUT_DISABLE_WORKFLOWS_PREFIX}*.yml")
 
