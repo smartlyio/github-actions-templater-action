@@ -40,6 +40,13 @@ inputs:
       requested by the project (usually master). Default false.
     default: "false"
     required: false
+  disable_workflows_prefix:
+    description: >-
+      Generated workflow files with this filename prefix will have the `on` section
+      automatically replaced with an invalid empty `on` list to prevent them from running.
+      Ignored if empty
+    default: ''
+    required: false
 
 outputs:
   has-changes:
@@ -82,6 +89,18 @@ runs:
       # commit in next step
       run: |
         rm -rf REMOVE-ME-github-actions-templates
+    - name: Disable rendered workflows if required
+      if: inputs.disable_workflows_prefix != ''
+      env:
+        INPUT_DISABLE_WORKFLOWS_PREFIX: ${{ inputs.disable_workflows_prefix }}
+      run: |
+        mapfile -t WORKFLOWS < <(find .github/workflows -name "${INPUT_DISABLE_WORKFLOWS_PREFIX}*")
+        
+        for workflow in "${WORKFLOWS[@]}"; do
+            echo "Disabling $workflow"
+            yq e -i '.on = []' "$workflow"
+        done
+
     - name: Push changes if required
       id: collect-changes
       env:
