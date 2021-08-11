@@ -90,10 +90,12 @@ runs:
       run: |
         rm -rf REMOVE-ME-github-actions-templates
     - name: Disable rendered workflows if required
-      if: inputs.disable_workflows_prefix != ''
+      shell: bash
       env:
         INPUT_DISABLE_WORKFLOWS_PREFIX: ${{ inputs.disable_workflows_prefix }}
       run: |
+        [ -z "$INPUT_DISABLE_WORKFLOWS_PREFIX" ] || exit 0
+        
         mapfile -t WORKFLOWS < <(find .github/workflows -type f -name "${INPUT_DISABLE_WORKFLOWS_PREFIX}*.yml")
         
         for workflow in "${WORKFLOWS[@]}"; do

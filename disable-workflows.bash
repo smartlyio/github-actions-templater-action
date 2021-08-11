@@ -1,3 +1,5 @@
+[ -z "$INPUT_DISABLE_WORKFLOWS_PREFIX" ] || exit 0
+
 mapfile -t WORKFLOWS < <(find .github/workflows -type f -name "${INPUT_DISABLE_WORKFLOWS_PREFIX}*.yml")
 
 for workflow in "${WORKFLOWS[@]}"; do
