@@ -89,20 +89,6 @@ runs:
       # commit in next step
       run: |
         rm -rf REMOVE-ME-github-actions-templates
-    - name: Disable rendered workflows if required
-      shell: bash
-      env:
-        INPUT_DISABLE_WORKFLOWS_PREFIX: ${{ inputs.disable_workflows_prefix }}
-      run: |
-        [ -z "$INPUT_DISABLE_WORKFLOWS_PREFIX" ] || exit 0
-        
-        mapfile -t WORKFLOWS < <(find .github/workflows -type f -name "${INPUT_DISABLE_WORKFLOWS_PREFIX}*.yml")
-        
-        for workflow in "${WORKFLOWS[@]}"; do
-            echo "Disabling $workflow"
-            yq e -i '.on = {"pull_request": {"types": ["locked"], "branches": ["workflow-renovate-canary-branch-should-never-exist"]}}' "$workflow"
-        done
-
     - name: Push changes if required
       id: collect-changes
       env:
