@@ -75,6 +75,12 @@ runs:
       # commit in next step
       run: |
         rm -rf REMOVE-ME-github-actions-templates
+    - name: Disable rendered workflows if required
+      shell: bash
+      env:
+        INPUT_DISABLE_WORKFLOWS_PREFIX: ${{ inputs.disable_workflows_prefix }}
+      run: |
+        @import script-import-helper (script_name: "disable-workflows.bash")
     - name: Push changes if required
       id: collect-changes
       env:
