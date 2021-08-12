@@ -47,7 +47,7 @@ if [ -n "$git_changes" ]; then
         echo "Close the PR as there are no longer relevant changes"
         gh pr close "$BRANCH_NAME"
       fi
-    else
+    elif [[ "$has_changes" == "true" ]]; then
       echo "Make sure the labels exist"
       if [ -n "$PR_LABEL" ]; then
         if ! gh api "/repos/smartlyio/${REPOSITORY_NAME}/labels/${PR_LABEL}"; then
