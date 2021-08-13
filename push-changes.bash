@@ -68,6 +68,7 @@ else
     if pr_exists "$INPUT_GITHUB_REPOSITORY" "$BRANCH_NAME"; then
         echo "Close the PR as there are no longer relevant changes"
         gh pr close "$BRANCH_NAME"
+        git push origin --delete "$BRANCH_NAME"
     fi
     echo ::set-output name=has-changes::false
     echo "No Changes Found."
