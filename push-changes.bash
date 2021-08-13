@@ -1,3 +1,14 @@
+REPOSITORY_NAME="$(echo "$INPUT_GITHUB_REPOSITORY" | awk -F / '{print $2}' | sed -e "s/:refs//")"
+BRANCH_NAME="${REPOSITORY_NAME}-github-actions-self-update"
+
+function pr_exists() {
+    local repo="$1"
+    local branch="$2"
+    local PR_COUNT=
+    PR_COUNT="$(gh api "repos/${repo}/pulls?state=open&head=smartlyio:${branch}" | jq '. | length')"
+    [ "$PR_COUNT" -gt 0 ]
+}
+
 git status
 # Check for changes in .github/workflows
 git_changes="$(git status --porcelain -- .github/workflows || true)"
@@ -11,8 +22,6 @@ if [ -n "$git_changes" ]; then
         exit 0
     fi
 
-    REPOSITORY_NAME="$(echo "$INPUT_GITHUB_REPOSITORY" | awk -F / '{print $2}' | sed -e "s/:refs//")"
-    BRANCH_NAME="${REPOSITORY_NAME}-github-actions-self-update"
     echo "Using branch: $BRANCH_NAME"
     git checkout -b "$BRANCH_NAME"
 
@@ -20,34 +29,19 @@ if [ -n "$git_changes" ]; then
     git add .github/workflows/
     git commit -m "Adding workflow changes at $(date)"
 
-    has_changes=true
     echo "Check if there is an existing branch and if the change set already exists in it."
     if [ -z "$(git diff "origin/$BRANCH_NAME" || echo "no branch")" ]; then
       echo "Seems to have no differences from existing branch!"
-      has_changes=false
     else
       echo "Pushing the branch"
       git push --force-with-lease -u origin HEAD
     fi
 
-    function pr_exists() {
-        local repo="$1"
-        local branch="$2"
-        local PR_COUNT=
-        PR_COUNT="$(gh api "repos/${repo}/pulls?state=open&head=smartlyio:${branch}" | jq '. | length')"
-        [ "$PR_COUNT" -gt 0 ]
-    }
-
     echo "Check if the PR already exists"
     if pr_exists "$INPUT_GITHUB_REPOSITORY" "$BRANCH_NAME"; then
-      if [[ "$has_changes" == "true" ]]; then
-        echo "PR Exists already!"
-        exit 0
-      else
-        echo "Close the PR as there are no longer relevant changes"
-        gh pr close "$BRANCH_NAME"
-      fi
-    elif [[ "$has_changes" == "true" ]]; then
+      echo "PR Exists already!"
+      exit 0
+    else
       echo "Make sure the labels exist"
       if [ -n "$PR_LABEL" ]; then
         if ! gh api "/repos/smartlyio/${REPOSITORY_NAME}/labels/${PR_LABEL}"; then
@@ -71,6 +65,10 @@ if [ -n "$git_changes" ]; then
       exit 0
     fi
 else
+    if pr_exists "$INPUT_GITHUB_REPOSITORY" "$BRANCH_NAME"; then
+        echo "Close the PR as there are no longer relevant changes"
+        gh pr close "$BRANCH_NAME"
+    fi
     echo ::set-output name=has-changes::false
     echo "No Changes Found."
     exit 0
