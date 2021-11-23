@@ -32,6 +32,9 @@ if [ -n "$git_changes" ]; then
     echo "Check if there is an existing branch and if the change set already exists in it."
     if [ -z "$(git diff "origin/$BRANCH_NAME" || echo "no branch")" ]; then
       echo "Seems to have no differences from existing branch!"
+      echo "Switching to the upstream branch"
+      git branch --set-upstream-to="origin/$BRANCH_NAME"
+      git reset --hard "origin/$BRANCH_NAME"
     else
       echo "Pushing the branch"
       git push --force-with-lease -u origin HEAD
