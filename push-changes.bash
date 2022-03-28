@@ -68,6 +68,11 @@ if [ -n "$git_changes" ]; then
       exit 0
     fi
 else
+    if [[ "$CREATE_PULL_REQUEST" == "false" ]]; then
+        echo "Skipping pull request manipulation"
+        exit 0
+    fi
+
     if pr_exists "$INPUT_GITHUB_REPOSITORY" "$BRANCH_NAME"; then
         echo "Close the PR as there are no longer relevant changes"
         gh pr close "$BRANCH_NAME"
