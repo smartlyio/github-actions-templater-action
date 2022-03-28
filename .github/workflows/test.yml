@@ -33,6 +33,7 @@ jobs:
           git_changes="$(git status --porcelain || true)"
           # If the output is not empty, there are changes; fail the action
           if [ -n "$git_changes" ]; then
+              git diff
               echo "Changes found; build the action with 'make' and commit the changes"
               exit 1
           fi
