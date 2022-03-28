@@ -98,9 +98,9 @@ runs:
             echo "No workflows configured for disabling"
             exit 0
         fi
-        
+
         mapfile -t WORKFLOWS < <(find .github/workflows -type f -name "${INPUT_DISABLE_WORKFLOWS_PREFIX}*.yml")
-        
+
         for workflow in "${WORKFLOWS[@]}"; do
             echo "Disabling $workflow"
             yq e -i '.on = {"pull_request": {"types": ["locked"], "branches": ["workflow-renovate-canary-branch-should-never-exist"]}}' "$workflow"
@@ -117,7 +117,7 @@ runs:
       run: |
         REPOSITORY_NAME="$(echo "$INPUT_GITHUB_REPOSITORY" | awk -F / '{print $2}' | sed -e "s/:refs//")"
         BRANCH_NAME="${REPOSITORY_NAME}-github-actions-self-update"
-        
+
         function pr_exists() {
             local repo="$1"
             local branch="$2"
@@ -125,7 +125,7 @@ runs:
             PR_COUNT="$(gh api "repos/${repo}/pulls?state=open&head=smartlyio:${branch}" | jq '. | length')"
             [ "$PR_COUNT" -gt 0 ]
         }
-        
+
         git status
         # Check for changes in .github/workflows
         git_changes="$(git status --porcelain -- .github/workflows || true)"
@@ -133,19 +133,19 @@ runs:
         if [ -n "$git_changes" ]; then
             echo ::set-output name=has-changes::true
             echo "Changes to workflows found!"
-        
+
             if [[ "$CREATE_PULL_REQUEST" == "false" ]]; then
                 echo "Skipping pull request creation"
                 exit 0
             fi
-        
+
             echo "Using branch: $BRANCH_NAME"
             git checkout -b "$BRANCH_NAME"
-        
+
             echo "Adding workflows directory and making commit"
             git add .github/workflows/
             git commit -m "Adding workflow changes at $(date)"
-        
+
             echo "Check if there is an existing branch and if the change set already exists in it."
             if [ -z "$(git diff "origin/$BRANCH_NAME" || echo "no branch")" ]; then
               echo "Seems to have no differences from existing branch!"
@@ -156,7 +156,7 @@ runs:
               echo "Pushing the branch"
               git push --force-with-lease -u origin HEAD
             fi
-        
+
             echo "Check if the PR already exists"
             if pr_exists "$INPUT_GITHUB_REPOSITORY" "$BRANCH_NAME"; then
               echo "PR Exists already!"
@@ -189,7 +189,7 @@ runs:
                 echo "Skipping pull request manipulation"
                 exit 0
             fi
-        
+
             if pr_exists "$INPUT_GITHUB_REPOSITORY" "$BRANCH_NAME"; then
                 echo "Close the PR as there are no longer relevant changes"
                 gh pr close "$BRANCH_NAME"
