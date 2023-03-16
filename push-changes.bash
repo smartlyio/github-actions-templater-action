@@ -14,7 +14,7 @@ git status
 git_changes="$(git status --porcelain -- .github/workflows || true)"
 # If the output is not empty, there are changes. Commit them
 if [ -n "$git_changes" ]; then
-    echo ::set-output name=has-changes::true
+    echo "has-changes=true" >> "$GITHUB_OUTPUT"
     echo "Changes to workflows found!"
 
     if [[ "$CREATE_PULL_REQUEST" == "false" ]]; then
@@ -78,7 +78,7 @@ else
         gh pr close "$BRANCH_NAME"
         git push origin --delete "$BRANCH_NAME"
     fi
-    echo ::set-output name=has-changes::false
+    echo "has-changes=false" >> "$GITHUB_OUTPUT"
     echo "No Changes Found."
     exit 0
 fi
