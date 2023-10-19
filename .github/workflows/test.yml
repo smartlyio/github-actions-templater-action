@@ -11,7 +11,7 @@ jobs:
     # Use newer os for more up-to-date shellcheck
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Run shellcheck on .sh and .bash files files
         run: |
           find . -name '*.sh' -exec shellcheck -s bash '{}' \+
@@ -20,7 +20,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/setup-ruby@v1
         with:
           ruby-version: "3.1"
